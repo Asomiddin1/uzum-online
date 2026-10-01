@@ -106,6 +106,7 @@ async function handleLogin(event) {
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const rememberMe = document.querySelector('input[type="checkbox"]').checked;
     
     try {
         const response = await fetch('/api/login', {
@@ -113,7 +114,7 @@ async function handleLogin(event) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, rememberMe })
         });
         
         const data = await response.json();
@@ -123,11 +124,19 @@ async function handleLogin(event) {
             closeLoginModal();
             
             // Login tugmasini o'zgartirish
-            const loginBtn = document.querySelector('.login-btn');
-            loginBtn.innerHTML = '👤 ' + data.user.name.split(' ')[0];
+            const loginBtn = document.getElementById('navUserBtn');
+            if (loginBtn) {
+                loginBtn.innerHTML = '👤 ' + data.user.name.split(' ')[0];
+            }
             
             // Foydalanuvchi ma'lumotlarini saqlash
             localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
+            
+            // Remember me saqlash
+            if (rememberMe) {
+                localStorage.setItem('rememberMe', 'true');
+            }
         } else {
             alert(data.error || 'Login qilishda xatolik');
         }
@@ -169,11 +178,14 @@ async function handleRegister(event) {
             closeRegisterModal();
             
             // Avtomatik login qilish
-            const loginBtn = document.querySelector('.login-btn');
-            loginBtn.innerHTML = '👤 ' + data.user.name.split(' ')[0];
+            const loginBtn = document.getElementById('navUserBtn');
+            if (loginBtn) {
+                loginBtn.innerHTML = '👤 ' + data.user.name.split(' ')[0];
+            }
             
             // Foydalanuvchi ma'lumotlarini saqlash
             localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('token', data.token);
         } else {
             alert(data.error || 'Ro\'yxatdan o\'tishda xatolik');
         }
