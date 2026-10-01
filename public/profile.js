@@ -78,6 +78,7 @@ async function updateProfile(event) {
     event.preventDefault();
     
     const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('token');
     const name = document.getElementById('profileName').value;
     const phone = document.getElementById('profilePhone').value;
     
@@ -85,7 +86,8 @@ async function updateProfile(event) {
         const response = await fetch('/api/profile/update', {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 userId: user.id,
@@ -105,7 +107,12 @@ async function updateProfile(event) {
             alert('Ma\'lumotlar muvaffaqiyatli yangilandi!');
             location.reload();
         } else {
-            alert(data.error || 'Yangilashda xatolik');
+            if (response.status === 401 || response.status === 403) {
+                alert('Sessiya tugadi. Iltimos, qayta login qiling.');
+                handleLogout();
+            } else {
+                alert(data.error || 'Yangilashda xatolik');
+            }
         }
     } catch (error) {
         console.error('Xatolik:', error);
@@ -127,12 +134,14 @@ async function changePassword(event) {
     }
     
     const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('token');
     
     try {
         const response = await fetch('/api/profile/change-password', {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 userId: user.id,
@@ -148,7 +157,11 @@ async function changePassword(event) {
             alert('Parol muvaffaqiyatli o\'zgartirildi!');
             document.getElementById('passwordForm').reset();
         } else {
-            alert(data.error || 'Parolni o\'zgartirishda xatolik');
+            if (response.status === 401 || response.status === 403) {
+                alert('Sessiya tugadi yoki joriy parol noto\'g\'ri.');
+            } else {
+                alert(data.error || 'Parolni o\'zgartirishda xatolik');
+            }
         }
     } catch (error) {
         console.error('Xatolik:', error);
@@ -170,9 +183,34 @@ function handleNavUserClick() {
 }
 
 // Chiqish
-function handleLogout() {
+async function handleLogout() {
     if (confirm('Haqiqatan ham chiqmoqchimisiz?')) {
-        localStorage.removeItem('user');
-        window.location.href = 'index.html';
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('rememberMe');
+                window.location.href = 'index.html';
+            } else {
+                // Xatolik bo'lsa ham local storage ni tozalash
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('rememberMe');
+                window.location.href = 'index.html';
+            }
+        } catch (error) {
+            console.error('Xatolik:', error);
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('rememberMe');
+            window.location.href = 'index.html';
+        }
     }
 }

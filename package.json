@@ -1,6 +1,7 @@
 {
-  "name": "my-express-app",
+  "name": "uzum-online",
   "version": "1.0.0",
+  "description": "Uzum Online - Zamonaviy onlayn do'kon platformasi",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -8,7 +9,11 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.7.0",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.3",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {

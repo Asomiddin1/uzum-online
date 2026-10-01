@@ -1,14 +1,69 @@
 const express = require('express');
 const path = require('path');
+const jwt = require('jsonwebtoken');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Secret key for JWT
+const JWT_SECRET = 'your-secret-key-change-in-production-2024';
+const SESSION_SECRET = 'your-session-secret-change-in-production-2024';
 
 // Ma'lumotlar bazasini ulash
 const { registerUser, loginUser, getAllProducts, getProductById } = require('./database');
 
+// Rate limiting
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 daqiqa
+  max: 5, // 5 ta urinish
+  message: { error: 'Juda ko\'p urinish. 15 daqiqadan keyin qayta urinib ko\'ring.' }
+});
+
+// Middleware
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Session konfiguratsiyasi
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Production da true bo'lishi kerak (HTTPS)
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 soat
+  }
+}));
+
+// JWT token yaratish
+function generateToken(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+}
+
+// JWT token tekshirish middleware
+function authenticateToken(req, res, next) {
+  const token = req.cookies.token || req.headers['authorization']?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Token topilmadi' });
+  }
+  
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Token yaroqsiz' });
+    }
+    req.user = user;
+    next();
+  });
+}
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -52,7 +107,7 @@ app.get('/api/items/:id', (req, res) => {
 });
 
 // Ro'yxatdan o'tish API
-app.post('/api/register', (req, res) => {
+app.post('/api/register', loginLimiter, (req, res) => {
   const { name, email, phone, password } = req.body;
   
   if (!name || !email || !phone || !password) {
@@ -67,13 +122,26 @@ app.post('/api/register', (req, res) => {
       return res.status(500).json({ error: 'Ro\'yxatdan o\'tishda xatolik' });
     }
     
-    res.json({ success: true, user });
+    // JWT token yaratish
+    const token = generateToken(user);
+    
+    // Session ga saqlash
+    req.session.userId = user.id;
+    
+    // Cookie ga saqlash
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: false, // Production da true
+      maxAge: 24 * 60 * 60 * 1000
+    });
+    
+    res.json({ success: true, user, token });
   });
 });
 
 // Login API
-app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
+app.post('/api/login', loginLimiter, (req, res) => {
+  const { email, password, rememberMe } = req.body;
   
   if (!email || !password) {
     return res.status(400).json({ error: 'Email va parolni kiriting' });
@@ -84,13 +152,53 @@ app.post('/api/login', (req, res) => {
       return res.status(401).json({ error: err.message });
     }
     
-    res.json({ success: true, user });
+    // JWT token yaratish
+    const tokenExpiry = rememberMe ? '30d' : '24h';
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: tokenExpiry }
+    );
+    
+    // Session ga saqlash
+    req.session.userId = user.id;
+    
+    // Cookie ga saqlash
+    const cookieMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: false, // Production da true
+      maxAge: cookieMaxAge
+    });
+    
+    res.json({ success: true, user, token });
   });
 });
 
+// Logout API
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Chiqishda xatolik' });
+    }
+    res.clearCookie('token');
+    res.json({ success: true, message: 'Muvaffaqiyatli chiqildi' });
+  });
+});
+
+// Token tekshirish API
+app.get('/api/verify-token', authenticateToken, (req, res) => {
+  res.json({ success: true, user: req.user });
+});
+
 // Profilni yangilash API
-app.put('/api/profile/update', (req, res) => {
+app.put('/api/profile/update', authenticateToken, (req, res) => {
   const { userId, name, phone } = req.body;
+  
+  // Foydalanuvchi faqat o'z profilini yangilashi mumkin
+  if (req.user.id !== userId) {
+    return res.status(403).json({ error: 'Ruxsat yo\'q' });
+  }
   
   if (!userId || !name || !phone) {
     return res.status(400).json({ error: 'Barcha maydonlarni to\'ldiring' });
@@ -109,8 +217,13 @@ app.put('/api/profile/update', (req, res) => {
 });
 
 // Parolni o'zgartirish API
-app.put('/api/profile/change-password', (req, res) => {
+app.put('/api/profile/change-password', authenticateToken, (req, res) => {
   const { userId, email, currentPassword, newPassword } = req.body;
+  
+  // Foydalanuvchi faqat o'z parolini o'zgartirishi mumkin
+  if (req.user.id !== userId) {
+    return res.status(403).json({ error: 'Ruxsat yo\'q' });
+  }
   
   if (!userId || !email || !currentPassword || !newPassword) {
     return res.status(400).json({ error: 'Barcha maydonlarni to\'ldiring' });
