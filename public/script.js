@@ -9,7 +9,7 @@ let currentCategory = 'all';
 // Serverdan ma'lumotlarni olish
 async function fetchItems() {
     try {
-        const response = await fetch('/api/items');
+        const response = await fetch('/api/items-with-images');
         allItems = await response.json();
         filteredItems = allItems;
         displayItems();
@@ -55,11 +55,15 @@ function displayItems() {
     
     currentItems.forEach(item => {
         const isInWishlist = wishlist.includes(item.id);
+        
+        // Rasm URL ni aniqlash
+        const imageUrl = item.image || `https://via.placeholder.com/400x400/7000FF/FFFFFF?text=${encodeURIComponent(item.name)}`;
+        
         const card = document.createElement('div');
         card.className = 'item-card';
         card.innerHTML = `
             <div class="product-image-wrapper">
-                <img src="https://via.placeholder.com/300x300/7000FF/FFFFFF?text=${encodeURIComponent(item.name)}" alt="${item.name}">
+                <img src="${imageUrl}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x400/7000FF/FFFFFF?text=No+Image'">
                 <button class="wishlist-btn ${isInWishlist ? 'active' : ''}" onclick="toggleWishlist(event, ${item.id})">
                     ${isInWishlist ? '❤️' : '🤍'}
                 </button>

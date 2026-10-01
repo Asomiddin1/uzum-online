@@ -22,17 +22,25 @@ Online do'kon uchun to'liq funksional web ilovasi. Node.js, Express, SQLite va m
 - 🚪 Xavfsiz chiqish (Logout)
 
 ### Mahsulotlar
-- 📦 Mahsulotlar ro'yxati
-- 🔍 Sahifalash (pagination)
-- 💰 Narx ko'rsatish
-- 📱 Responsive dizayn
+- 📦 Mahsulotlar ro'yxati (8 ta professional mahsulot)
+- 🖼️ **Unsplash API** integratsiyasi - yuqori sifatli rasmlar
+- 🏷️ Kategoriya filtrlash (Elektronika, Kiyim, Uy-joy, Sport)
+- 🔍 Real-time qidiruv
+- ⭐ Reyting ko'rsatish (yulduzchalar)
+- 💸 Chegirma badgelari
+- ❤️ Wishlist funksiyasi
+- 🛒 Savat (Cart) boshqaruvi
+- 📄 Sahifalash (8 mahsulot/sahifa)
 
-### UI/UX
-- 🎨 Gradient dizayn
-- ✨ Animatsiyalar
-- 📱 Mobil qurilmalar uchun moslashtirilgan
+### UI/UX (Uzum.uz dizayni)
+- 🎨 Zamonaviy purple gradient (#7000FF)
+- 🔍 Navbar bilan qidiruv tizimi
+- 🛒 Cart badge (real-time hisoblagich)
+- 👤 Profil tugmasi
+- 🏷️ Kategoriya tanlash
+- ✨ Hover animatsiyalari
+- 📱 To'liq responsive dizayn
 - 🌐 O'zbekcha interfeys
-- 🎯 Navbar va navigation
 
 ## 🛠️ Texnologiyalar
 
@@ -45,13 +53,16 @@ Online do'kon uchun to'liq funksional web ilovasi. Node.js, Express, SQLite va m
 - **express-session** - Session boshqaruvi
 - **express-rate-limit** - Rate limiting
 - **cookie-parser** - Cookie boshqaruvi
+- **dotenv** - Environment variables
+- **unsplash-js** - Unsplash API SDK
+- **node-fetch** - HTTP requests
 
 ### Frontend
 - **HTML5**
-- **CSS3** (Gradient, Flexbox, Grid)
+- **CSS3** (CSS Variables, Flexbox, Grid, Animations)
 - **JavaScript (ES6+)**
 - **Fetch API** - AJAX so'rovlari
-- **LocalStorage** - Client-side storage
+- **LocalStorage** - Wishlist va Cart saqlash
 
 ## 📦 O'rnatish
 
@@ -72,15 +83,37 @@ cd uzum-online
 npm install
 ```
 
-3. Serverni ishga tushiring:
+3. `.env` faylini sozlang:
+```bash
+# .env faylini yarating va quyidagilarni kiriting:
+UNSPLASH_ACCESS_KEY=your_unsplash_access_key_here
+PORT=3000
+JWT_SECRET=your-jwt-secret-key
+SESSION_SECRET=your-session-secret-key
+```
+
+**Unsplash API kalitini olish:**
+- https://unsplash.com/developers saytiga kiring
+- "Register as a developer" tugmasini bosing
+- "New Application" yarating
+- Access Key ni nusxalab, `.env` fayliga qo'ying
+
+4. Serverni ishga tushiring:
 ```bash
 npm run dev
 ```
 
-4. Brauzeringizda oching:
+5. Brauzeringizda oching:
 ```
 http://localhost:3000
 ```
+
+6. (Ixtiyoriy) Mahsulot rasmlarini Unsplash dan yuklab olish:
+```bash
+# Browser da yoki Postman orqali:
+POST http://localhost:3000/api/unsplash/sync-all
+```
+Bu barcha mahsulotlar uchun Unsplash dan yuqori sifatli rasmlarni yuklab, database'ga saqlaydi.
 
 ## 🔐 Xavfsizlik Xususiyatlari
 
@@ -107,16 +140,19 @@ http://localhost:3000
 ```
 uzum-online/
 ├── public/
-│   ├── index.html          # Bosh sahifa
+│   ├── index.html          # Bosh sahifa (Uzum.uz dizayni)
 │   ├── profile.html        # Profil sahifasi
-│   ├── style.css           # Asosiy stillar
+│   ├── style.css           # Asosiy stillar (CSS Variables)
 │   ├── profile.css         # Profil stillari
-│   ├── script.js           # Bosh sahifa JS
+│   ├── script.js           # Bosh sahifa JS (qidiruv, cart, wishlist)
 │   └── profile.js          # Profil JS
 ├── database.js             # Ma'lumotlar bazasi konfiguratsiyasi
-├── server.js               # Express server
-├── package.json
-└── README.md
+├── server.js               # Express server + API endpoints
+├── unsplash.js             # Unsplash API integratsiyasi
+├── .env                    # Environment variables (API keys)
+├── .gitignore              # Git ignore fayli
+├── package.json            # Dependencies
+└── README.md               # Dokumentatsiya
 ```
 
 ## 🗄️ Ma'lumotlar Bazasi
@@ -140,7 +176,13 @@ CREATE TABLE products (
     name TEXT NOT NULL,
     description TEXT,
     price REAL NOT NULL,
-    image TEXT,
+    original_price REAL,           -- Chegirma oldidan narx
+    discount_percent INTEGER,      -- Chegirma foizi (0-100)
+    rating REAL DEFAULT 0,         -- Reyting (0-5)
+    rating_count INTEGER DEFAULT 0, -- Reyting berishlar soni
+    category TEXT,                 -- Kategoriya (Elektronika, Kiyim, va h.k.)
+    in_stock INTEGER DEFAULT 1,    -- Mavjudligi (1=ha, 0=yo'q)
+    image TEXT,                    -- Rasm URL (Unsplash dan)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -154,12 +196,17 @@ CREATE TABLE products (
 - `GET /api/verify-token` - Token tekshirish (protected)
 
 ### Products
-- `GET /api/items` - Barcha mahsulotlar
+- `GET /api/items` - Barcha mahsulotlar (formatlangan)
+- `GET /api/items-with-images` - Barcha mahsulotlar (rasmlar bilan)
 - `GET /api/items/:id` - Bitta mahsulot
 
 ### Profile (Protected)
 - `PUT /api/profile/update` - Profilni yangilash
 - `PUT /api/profile/change-password` - Parolni o'zgartirish
+
+### Unsplash API Integration
+- `GET /api/unsplash/product/:id` - Bitta mahsulot uchun rasm olish
+- `POST /api/unsplash/sync-all` - Barcha mahsulotlar uchun rasmlarni sinxronlash
 
 ## 🚦 Rate Limiting
 

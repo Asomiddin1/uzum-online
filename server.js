@@ -1,15 +1,17 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const { getImageForProduct, getImagesForProducts } = require('./unsplash');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Secret key for JWT
-const JWT_SECRET = 'your-secret-key-change-in-production-2024';
-const SESSION_SECRET = 'your-session-secret-change-in-production-2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production-2024';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'your-session-secret-change-in-production-2024';
 
 // Ma'lumotlar bazasini ulash
 const { registerUser, loginUser, getAllProducts, getProductById } = require('./database');
@@ -253,6 +255,88 @@ app.put('/api/profile/change-password', authenticateToken, (req, res) => {
         res.json({ success: true, message: 'Parol o\'zgartirildi' });
       });
     });
+  });
+});
+
+// ==================== UNSPLASH API ENDPOINTS ====================
+
+// Bitta mahsulot uchun rasm olish
+app.get('/api/unsplash/product/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  getProductById(id, async (err, product) => {
+    if (err || !product) {
+      return res.status(404).json({ error: 'Mahsulot topilmadi' });
+    }
+    
+    try {
+      const imageData = await getImageForProduct(product.name, product.category);
+      
+      if (!imageData) {
+        return res.status(404).json({ error: 'Rasm topilmadi' });
+      }
+      
+      res.json({
+        productId: product.id,
+        productName: product.name,
+        imageData: imageData
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Rasmni olishda xatolik', details: error.message });
+    }
+  });
+});
+
+// Barcha mahsulotlar uchun rasmlar olish va database'ga saqlash
+app.post('/api/unsplash/sync-all', async (req, res) => {
+  getAllProducts(async (err, products) => {
+    if (err) {
+      return res.status(500).json({ error: 'Mahsulotlarni olishda xatolik' });
+    }
+    
+    try {
+      const results = await getImagesForProducts(products);
+      
+      // Database'ga saqlash
+      const { db } = require('./database');
+      const updatePromises = results.map(result => {
+        return new Promise((resolve, reject) => {
+          if (result.imageUrl) {
+            db.run(
+              'UPDATE products SET image = ? WHERE id = ?',
+              [result.imageUrl, result.productId],
+              (err) => {
+                if (err) reject(err);
+                else resolve();
+              }
+            );
+          } else {
+            resolve();
+          }
+        });
+      });
+      
+      await Promise.all(updatePromises);
+      
+      res.json({
+        success: true,
+        message: 'Barcha rasmlar yangilandi',
+        results: results
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Rasmlarni sinxronlashda xatolik', details: error.message });
+    }
+  });
+});
+
+// Mahsulotlarni rasmlar bilan olish
+app.get('/api/items-with-images', (req, res) => {
+  getAllProducts((err, products) => {
+    if (err) {
+      return res.status(500).json({ error: 'Ma\'lumotlarni olishda xatolik' });
+    }
+    
+    res.json(products);
   });
 });
 
