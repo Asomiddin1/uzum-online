@@ -323,17 +323,6 @@ app.post('/api/unsplash/sync-all', (req, res) => {
       });
   });
 });
-      
-      res.json({
-        success: true,
-        message: 'Barcha rasmlar yangilandi',
-        results: results
-      });
-    } catch (error) {
-      res.status(500).json({ error: 'Rasmlarni sinxronlashda xatolik', details: error.message });
-    }
-  });
-});
 
 // Mahsulotlarni rasmlar bilan olish
 app.get('/api/items-with-images', (req, res) => {
