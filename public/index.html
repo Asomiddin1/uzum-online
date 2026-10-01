@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Do'kon</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>Uzum.uz</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active">Bosh sahifa</a></li>
+                <li><a href="#" class="nav-link">Mahsulotlar</a></li>
+                <li><a href="#" class="nav-link">Aksiyalar</a></li>
+                <li><a href="#" class="nav-link">Bog'lanish</a></li>
+            </ul>
+            <button class="login-btn" id="navUserBtn" onclick="handleNavUserClick()">
+                👤 Kirish
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero/Reklama Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Eng Yangi Mahsulotlar!</h1>
+            <p class="hero-subtitle">Sifatli mevalar va sabzavotlar eng yaxshi narxlarda</p>
+            <button class="hero-btn" onclick="scrollToProducts()">Xarid qilish</button>
+        </div>
+    </section>
+
+    <!-- Mahsulotlar bo'limi -->
+    <div class="container">
+        <div class="section-title">
+            <h2>Bizning Mahsulotlar</h2>
+            <p>Tanlangan eng yangi mahsulotlar</p>
+        </div>
+
+        <div class="items-grid" id="itemsGrid">
+            <!-- JavaScript orqali to'ldiriladi -->
+        </div>
+
+        <div class="pagination">
+            <button id="prevBtn" onclick="prevPage()">⬅️ Oldingi</button>
+            <span id="pageInfo"></span>
+            <button id="nextBtn" onclick="nextPage()">Keyingi ➡️</button>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeLoginModal()">&times;</span>
+            <h2>Hisobga Kirish</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="email">Email yoki Telefon</label>
+                    <input type="text" id="email" placeholder="example@mail.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Parol</label>
+                    <input type="password" id="password" placeholder="Parolingizni kiriting" required>
+                </div>
+                <div class="form-options">
+                    <label class="checkbox">
+                        <input type="checkbox"> Eslab qol
+                    </label>
+                    <a href="#" class="forgot-link">Parolni unutdingizmi?</a>
+                </div>
+                <button type="submit" class="submit-btn">Kirish</button>
+                <p class="register-link">Hisobingiz yo'qmi? <a href="#" onclick="switchToRegister(event)">Ro'yxatdan o'tish</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRegisterModal()">&times;</span>
+            <h2>Ro'yxatdan O'tish</h2>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="regName">Ism va Familiya</label>
+                    <input type="text" id="regName" placeholder="Ismingizni kiriting" required>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" placeholder="example@mail.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Telefon raqam</label>
+                    <input type="tel" id="regPhone" placeholder="+998 90 123 45 67" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Parol</label>
+                    <input type="password" id="regPassword" placeholder="Kamida 6 ta belgi" minlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Parolni tasdiqlash</label>
+                    <input type="password" id="regConfirmPassword" placeholder="Parolni qayta kiriting" minlength="6" required>
+                </div>
+                <div class="form-options">
+                    <label class="checkbox">
+                        <input type="checkbox" required> Shartlar va qoidalarga roziman
+                    </label>
+                </div>
+                <button type="submit" class="submit-btn">Ro'yxatdan o'tish</button>
+                <p class="register-link">Hisobingiz bormi? <a href="#" onclick="switchToLogin(event)">Kirish</a></p>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

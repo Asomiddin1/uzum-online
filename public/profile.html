@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - Online Do'kon</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>🛍️ MEGA DO'KON</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">Bosh sahifa</a></li>
+                <li><a href="#" class="nav-link">Mahsulotlar</a></li>
+                <li><a href="#" class="nav-link">Aksiyalar</a></li>
+                <li><a href="#" class="nav-link">Bog'lanish</a></li>
+            </ul>
+            <button class="login-btn" id="navUserBtn" onclick="handleNavUserClick()">
+                👤 Kirish
+            </button>
+        </div>
+    </nav>
+
+    <!-- Profile Container -->
+    <div class="profile-container">
+        <!-- Profile Sidebar -->
+        <aside class="profile-sidebar">
+            <div class="profile-avatar">
+                <div class="avatar-circle">
+                    <span id="avatarInitials">U</span>
+                </div>
+                <button class="change-avatar-btn">Rasmni o'zgartirish</button>
+            </div>
+            <nav class="profile-nav">
+                <a href="#" class="profile-nav-item active" onclick="showSection('info')">
+                    📋 Shaxsiy ma'lumotlar
+                </a>
+                <a href="#" class="profile-nav-item" onclick="showSection('orders')">
+                    🛒 Buyurtmalarim
+                </a>
+                <a href="#" class="profile-nav-item" onclick="showSection('settings')">
+                    ⚙️ Sozlamalar
+                </a>
+                <a href="#" class="profile-nav-item logout" onclick="handleLogout()">
+                    🚪 Chiqish
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Profile Content -->
+        <main class="profile-content">
+            <!-- Shaxsiy ma'lumotlar -->
+            <section id="infoSection" class="profile-section active">
+                <h2 class="section-title">Shaxsiy Ma'lumotlar</h2>
+                <form id="profileForm" class="profile-form" onsubmit="updateProfile(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profileName">Ism va Familiya</label>
+                            <input type="text" id="profileName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profileEmail">Email</label>
+                            <input type="email" id="profileEmail" disabled>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profilePhone">Telefon raqam</label>
+                            <input type="tel" id="profilePhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profileDate">Ro'yxatdan o'tgan sana</label>
+                            <input type="text" id="profileDate" disabled>
+                        </div>
+                    </div>
+                    <button type="submit" class="save-btn">Saqlash</button>
+                </form>
+            </section>
+
+            <!-- Buyurtmalar -->
+            <section id="ordersSection" class="profile-section">
+                <h2 class="section-title">Buyurtmalarim</h2>
+                <div class="orders-list" id="ordersList">
+                    <div class="empty-state">
+                        <p>📦 Sizda hali buyurtmalar yo'q</p>
+                        <a href="index.html" class="shop-btn">Xarid qilish</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sozlamalar -->
+            <section id="settingsSection" class="profile-section">
+                <h2 class="section-title">Sozlamalar</h2>
+                <div class="settings-group">
+                    <h3>Parolni o'zgartirish</h3>
+                    <form id="passwordForm" class="profile-form" onsubmit="changePassword(event)">
+                        <div class="form-group">
+                            <label for="currentPassword">Joriy parol</label>
+                            <input type="password" id="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">Yangi parol</label>
+                            <input type="password" id="newPassword" minlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmNewPassword">Yangi parolni tasdiqlash</label>
+                            <input type="password" id="confirmNewPassword" minlength="6" required>
+                        </div>
+                        <button type="submit" class="save-btn">Parolni o'zgartirish</button>
+                    </form>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Bildirishnomalar</h3>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="emailNotifications" checked>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Email bildirishnomalar</span>
+                    </label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="smsNotifications">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">SMS bildirishnomalar</span>
+                    </label>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="profile.js"></script>
+</body>
+</html>
