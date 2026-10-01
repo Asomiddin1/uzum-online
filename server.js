@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const { getImageForProduct, getImagesForProducts } = require('./unsplash');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -253,6 +254,84 @@ app.put('/api/profile/change-password', authenticateToken, (req, res) => {
         res.json({ success: true, message: 'Parol o\'zgartirildi' });
       });
     });
+  });
+});
+
+// ==================== UNSPLASH API ENDPOINTS ====================
+
+// Bitta mahsulot uchun rasm olish
+app.get('/api/unsplash/product/:id', (req, res) => {
+  const { id } = req.params;
+  
+  getProductById(id, (err, product) => {
+    if (err || !product) {
+      return res.status(404).json({ error: 'Mahsulot topilmadi' });
+    }
+    
+    const imageData = getImageForProduct(product.name, product.category, product.id);
+    
+    if (!imageData) {
+      return res.status(404).json({ error: 'Rasm topilmadi' });
+    }
+    
+    res.json({
+      productId: product.id,
+      productName: product.name,
+      imageData: imageData
+    });
+  });
+});
+
+// Barcha mahsulotlar uchun rasmlar olish va database'ga saqlash
+app.post('/api/unsplash/sync-all', (req, res) => {
+  getAllProducts((err, products) => {
+    if (err) {
+      return res.status(500).json({ error: 'Mahsulotlarni olishda xatolik' });
+    }
+    
+    const results = getImagesForProducts(products);
+    
+    // Database'ga saqlash
+    const { db } = require('./database');
+    const updatePromises = results.map(result => {
+      return new Promise((resolve, reject) => {
+        if (result.imageUrl) {
+          db.run(
+            'UPDATE products SET image = ? WHERE id = ?',
+            [result.imageUrl, result.productId],
+            (err) => {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        } else {
+          resolve();
+        }
+      });
+    });
+    
+    Promise.all(updatePromises)
+      .then(() => {
+        res.json({
+          success: true,
+          message: 'Barcha rasmlar yangilandi',
+          results: results
+        });
+      })
+      .catch(error => {
+        res.status(500).json({ error: 'Rasmlarni sinxronlashda xatolik', details: error.message });
+      });
+  });
+});
+
+// Mahsulotlarni rasmlar bilan olish
+app.get('/api/items-with-images', (req, res) => {
+  getAllProducts((err, products) => {
+    if (err) {
+      return res.status(500).json({ error: 'Ma\'lumotlarni olishda xatolik' });
+    }
+    
+    res.json(products);
   });
 });
 

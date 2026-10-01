@@ -2,7 +2,19 @@
 window.addEventListener('DOMContentLoaded', () => {
     loadUserProfile();
     checkAuth();
+    updateCartBadge();
 });
+
+// Cart badge'ni yangilash
+function updateCartBadge() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    const cartBadge = document.getElementById('cartBadge');
+    if (cartBadge) {
+        cartBadge.textContent = totalItems;
+        cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+    }
+}
 
 // Foydalanuvchini autentifikatsiya qilish
 function checkAuth() {
@@ -16,9 +28,9 @@ function checkAuth() {
     }
     
     // Navbar tugmasini o'zgartirish
-    const navUserBtn = document.getElementById('navUserBtn');
-    if (navUserBtn) {
-        navUserBtn.innerHTML = '👤 ' + user.name.split(' ')[0];
+    const navUserName = document.getElementById('navUserName');
+    if (navUserName) {
+        navUserName.textContent = user.name.split(' ')[0];
     }
 }
 
