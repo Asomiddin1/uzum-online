@@ -1,6 +1,7 @@
 {
-  "name": "my-express-app",
+  "name": "uzum-online",
   "version": "1.0.0",
+  "description": "Uzum Online - Zamonaviy onlayn do'kon platformasi",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
